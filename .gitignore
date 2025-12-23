@@ -1,0 +1,23 @@
+
+# Build directories
+
+build/
+bin/
+
+# Cache directories
+
+.cache/
+.ccls-cache/
+compile_commands.json
+
+# System files
+
+.DS_Store
+Thumbs.db
+
+# IDE settings
+
+.vscode/
+.idea/
+*.swp
+
