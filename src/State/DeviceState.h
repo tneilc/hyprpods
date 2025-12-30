@@ -1,5 +1,6 @@
 #pragma once
 #include "../Decoder/Decoder.h"
+#include "../Utils/json.hpp"
 #include <chrono>
 #include <string>
 
@@ -17,7 +18,7 @@ public:
     void set_pairing_available(bool available, const std::string &mac = "");
 
     // Output
-    void print_json();
+    void print_json(bool initial = false);
     bool is_connected() const { return connected; }
 
 private:
@@ -37,4 +38,6 @@ private:
     // Timing
     std::chrono::steady_clock::time_point last_seen;
     bool was_visible = false;
+
+    Json::Value j;
 };

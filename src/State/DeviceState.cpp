@@ -1,12 +1,10 @@
 #include "DeviceState.h"
 #include "../Config/Config.h"
-#include "../Utils/json.hpp"
 #include <algorithm>
 #include <fstream>
 #include <iostream>
-#include <sstream>
 
-DeviceState::DeviceState() {}
+DeviceState::DeviceState() { j = Json::Object{}; }
 
 void DeviceState::save_mac(const std::string &path) {
     size_t pos = path.find("dev_");
@@ -76,8 +74,12 @@ bool DeviceState::is_stale() const {
     return diff > Config::TIMEOUT_SECONDS;
 }
 
-void DeviceState::print_json() {
-    Json::Value j = Json::Object{};
+void DeviceState::print_json(bool initial) {
+    if (initial) {
+        j["text"] = "";
+        std::cout << j.dump() << std::endl;
+        return;
+    }
     if (is_stale()) {
         if (was_visible) {
             j["text"] = "";
@@ -105,6 +107,5 @@ void DeviceState::print_json() {
                        "Case: " + (bat.case_val >= 0 ? std::to_string(bat.case_val) + "%" : "--");
         j["class"] = connected ? "connected" : "discovered";
     }
-
     std::cout << j.dump() << std::endl;
 }

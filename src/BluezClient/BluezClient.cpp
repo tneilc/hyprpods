@@ -37,7 +37,7 @@ BluezClient::~BluezClient() {
 
 void BluezClient::run() {
     // Initial JSON output to prevent Waybar error
-    std::cout << "{\"text\": \"\"}" << std::endl;
+    state.print_json(true);
 
     init_connection();
     find_adapter();
