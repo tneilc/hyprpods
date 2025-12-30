@@ -1,5 +1,6 @@
 #include "DeviceState.h"
 #include "../Config/Config.h"
+#include "../Utils/json.hpp"
 #include <algorithm>
 #include <fstream>
 #include <iostream>
@@ -76,44 +77,34 @@ bool DeviceState::is_stale() const {
 }
 
 void DeviceState::print_json() {
+    Json::Value j = Json::Object{};
     if (is_stale()) {
         if (was_visible) {
-            std::cout << "{\"text\": \"\"}" << std::endl;
+            j["text"] = "";
+            std::cout << j.dump() << std::endl;
+            // std::cout << "{\"text\": \"\"}" << std::endl;
             was_visible = false;
         }
         return;
     }
 
     was_visible = true;
-    std::stringstream ss;
-    ss << "{";
 
     if (pairing_available && !connected) {
-        ss << "\"text\": \" Click to Pair\",";
-        ss << "\"class\": \"pairing\",";
-        ss << "\"tooltip\": \"AirPods in pairing mode detected.\\nClick to connect.\"";
+        j["text"] = " Click to Pair";
+        j["class"] = "pairing";
+        j["tooltip"] = "AirPods in pairing mode detected.\nClick to connect.";
     } else {
-        ss << "\"text\": \"";
-        if (bat.charging)
-            ss << " ";
-        else
-            ss << " ";
+        j["text"] = "  L:" + (bat.left >= 0 ? std::to_string(bat.left) + "%" : "--") + " " +
+                    "R:" + (bat.right >= 0 ? std::to_string(bat.right) + "%" : "--") +
+                    (bat.case_val >= 0 ? " C:" + std::to_string(bat.case_val) + "%" : "");
 
-        ss << "L:" << (bat.left >= 0 ? std::to_string(bat.left) + "%" : "--") << " ";
-        ss << "R:" << (bat.right >= 0 ? std::to_string(bat.right) + "%" : "--") << " ";
-        if (bat.case_val >= 0)
-            ss << "C:" << bat.case_val << "%";
-        ss << "\",";
-
-        ss << "\"tooltip\": \"";
-        ss << "Left: " << (bat.left >= 0 ? std::to_string(bat.left) + "%" : "--") << "\\n";
-        ss << "Right: " << (bat.right >= 0 ? std::to_string(bat.right) + "%" : "--") << "\\n";
-        ss << "Case: " << (bat.case_val >= 0 ? std::to_string(bat.case_val) + "%" : "--");
-        ss << "\",";
-
-        ss << "\"class\": \"" << (connected ? "connected" : "discovered") << "\"";
+        j["tooltip"] = "Left: " + (bat.left >= 0 ? std::to_string(bat.left) + "%" : "--") + "\n" +
+                       "Right: " + (bat.right >= 0 ? std::to_string(bat.right) + "%" : "--") +
+                       "\n" +
+                       "Case: " + (bat.case_val >= 0 ? std::to_string(bat.case_val) + "%" : "--");
+        j["class"] = connected ? "connected" : "discovered";
     }
 
-    ss << "}";
-    std::cout << ss.str() << std::endl;
+    std::cout << j.dump() << std::endl;
 }
