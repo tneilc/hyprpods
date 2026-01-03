@@ -96,7 +96,7 @@ Add the following module to your `waybar` config (usually `~/.config/waybar/conf
     "format": "{}",
     "exec": "hyprpods",
     "return-type": "json",
-    "on-click": "hyprpods --pair",
+    "on-click": "pkill -SIGUSR1 hyprpods",
     "signal": 10
 }
 ```
