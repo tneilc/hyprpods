@@ -21,9 +21,10 @@ public:
     void print_json(bool initial = false);
     bool is_connected() const { return connected; }
 
+    const std::string &get_pairing_mac() { return pairing_mac; }
+
 private:
     void save_mac(const std::string &path_suffix);
-    std::string load_mac();
     bool is_stale() const;
 
     // Data
@@ -33,7 +34,7 @@ private:
 
     // Pairing State
     bool pairing_available = false;
-    std::string pairing_mac; // MAC of the device wanting to pair
+    std::string pairing_mac;
 
     // Timing
     std::chrono::steady_clock::time_point last_seen;

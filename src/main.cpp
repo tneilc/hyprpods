@@ -1,19 +1,17 @@
 #include "BluezClient/BluezClient.h"
+#include <csignal>
 #include <cstdio>
 #include <cstring>
 #include <iostream>
 
 int main(int argc, char **argv) {
-    // Unbuffered output for Waybar
     setbuf(stdout, NULL);
 
-    // Check for arguments
-    if (argc > 1 && std::strcmp(argv[1], "--pair") == 0) {
-        BluezClient::trigger_pairing();
-        return 0;
-    }
+    sigset_t set;
+    sigemptyset(&set);
+    sigaddset(&set, SIGUSR1);
+    pthread_sigmask(SIG_BLOCK, &set, nullptr);
 
-    // Default mode: Monitoring Loop
     try {
         BluezClient app;
         app.run();

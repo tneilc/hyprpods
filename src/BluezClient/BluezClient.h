@@ -12,13 +12,14 @@ public:
 
     void run();
 
-    static void trigger_pairing();
+    void trigger_pairing();
 
 private:
     void init_connection();
     void find_adapter();
     void start_scanning();
     void setup_signal_handler();
+    void start_signal_listener();
 
     std::unique_ptr<sdbus::IConnection> connection;
 
@@ -26,4 +27,6 @@ private:
 
     DeviceState state;
     std::string adapter_path;
+    std::thread signal_thread;
+    std::atomic<bool> running{true};
 };

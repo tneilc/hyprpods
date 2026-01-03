@@ -3,7 +3,7 @@
 #include "../Decoder/Decoder.h"
 #include "../Utils/Utils.h"
 #include <chrono>
-#include <fstream>
+#include <csignal>
 #include <iostream>
 #include <map>
 #include <string>
@@ -49,6 +49,7 @@ void BluezClient::run() {
 
     state.set_adapter_powered(true);
     setup_signal_handler();
+    start_signal_listener();
     start_scanning();
 
     // Enters the blocking event loop provided by sdbus-c++
@@ -107,6 +108,31 @@ void BluezClient::start_scanning() {
     }
 }
 
+void BluezClient::start_signal_listener() {
+    sigset_t set;
+    sigemptyset(&set);
+    sigaddset(&set, SIGUSR1);
+    // Block in this thread so the new thread inherits the mask
+    pthread_sigmask(SIG_BLOCK, &set, nullptr);
+
+    signal_thread = std::thread([this, set]() mutable {
+        int sig;
+        while (running) {
+            // Wait for SIGUSR1
+            if (sigwait(&set, &sig) == 0 && sig == SIGUSR1) {
+                if (!running)
+                    break;
+                std::cerr << "Signal received. Spawning pairing thread..." << std::endl;
+                if (this->state.is_connected()) {
+                    std::cerr << "Device not connected. Ignoring pairing request." << std::endl;
+                } else {
+                    std::thread([this]() { this->trigger_pairing(); }).detach();
+                }
+            }
+        }
+    });
+}
+
 void BluezClient::setup_signal_handler() {
     const std::string matchRule = "type='signal',interface='" + PROP_IFACE + "'";
 
@@ -160,12 +186,7 @@ void BluezClient::setup_signal_handler() {
 void BluezClient::trigger_pairing() {
     auto conn = sdbus::createSystemBusConnection();
 
-    std::ifstream in(Config::MAC_FILE);
-    std::string mac;
-    if (!std::getline(in, mac) || mac.empty()) {
-        std::cerr << "No pending pairing device found in " << Config::MAC_FILE << std::endl;
-        return;
-    }
+    const std::string &mac = state.get_pairing_mac();
 
     std::cout << "Starting action for " << mac << "..." << std::endl;
 

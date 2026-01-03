@@ -1,7 +1,6 @@
 #include "DeviceState.h"
 #include "../Config/Config.h"
 #include <algorithm>
-#include <fstream>
 #include <iostream>
 
 DeviceState::DeviceState() { j = Json::Object{}; }
@@ -14,14 +13,10 @@ void DeviceState::save_mac(const std::string &path) {
     std::string suffix = path.substr(pos + 4);
     std::replace(suffix.begin(), suffix.end(), '_', ':');
 
-    std::ofstream out(Config::MAC_FILE);
-    if (out.good())
-        out << suffix;
+    pairing_mac = suffix;
 }
 
 bool DeviceState::update_from_packet(const BatteryData &data, const std::string &path) {
-    // If connected, are using the device.
-    // Suppress "Click to Pair" to prevent UI annoyance, just show battery.
     if (connected) {
         bat = data;
         bat.in_pairing_mode = false;
@@ -29,14 +24,11 @@ bool DeviceState::update_from_packet(const BatteryData &data, const std::string 
         return true;
     }
 
-    // If NOT connected, and the packet indicates Pairing Mode (Byte 2 == 0x01),
-    // prioritize showing the Pairing prompt.
     if (data.in_pairing_mode) {
         set_pairing_available(true, path);
         return true;
     }
 
-    // Otherwise, just show passive battery stats (Case Open)
     pairing_available = false;
     bat = data;
     last_seen = std::chrono::steady_clock::now();
@@ -84,7 +76,6 @@ void DeviceState::print_json(bool initial) {
         if (was_visible) {
             j["text"] = "";
             std::cout << j.dump() << std::endl;
-            // std::cout << "{\"text\": \"\"}" << std::endl;
             was_visible = false;
         }
         return;
@@ -96,6 +87,7 @@ void DeviceState::print_json(bool initial) {
         j["text"] = " Click to Pair";
         j["class"] = "pairing";
         j["tooltip"] = "AirPods in pairing mode detected.\nClick to connect.";
+        std::cout << pairing_mac << std::endl;
     } else {
         j["text"] = "  L:" + (bat.left >= 0 ? std::to_string(bat.left) + "%" : "--") + " " +
                     "R:" + (bat.right >= 0 ? std::to_string(bat.right) + "%" : "--") +
@@ -104,7 +96,8 @@ void DeviceState::print_json(bool initial) {
         j["tooltip"] = "Left: " + (bat.left >= 0 ? std::to_string(bat.left) + "%" : "--") + "\n" +
                        "Right: " + (bat.right >= 0 ? std::to_string(bat.right) + "%" : "--") +
                        "\n" +
-                       "Case: " + (bat.case_val >= 0 ? std::to_string(bat.case_val) + "%" : "--");
+                       "Case: " + (bat.case_val >= 0 ? std::to_string(bat.case_val) + "%" : "--") +
+                       "\n" + (bat.charging ? "Charging" : "Not Charging");
         j["class"] = connected ? "connected" : "discovered";
     }
     std::cout << j.dump() << std::endl;

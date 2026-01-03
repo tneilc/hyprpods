@@ -17,12 +17,13 @@ std::optional<BatteryData> Decoder::parse(const std::vector<std::uint8_t> &data)
     out.in_pairing_mode = false;
 
     // --- PAIRING MODE DETECTION ---
-    // User feedback: 0x07 at Byte 2 = Pairing Mode
     if (data.size() > 2) {
         if (data[2] == 0x07) {
             out.in_pairing_mode = true;
         }
     }
+    // std::uint8_t status_byte = data[5];
+    // int primary_pod = (status_byte >> 5) & 1; //1 = Left, 0 = Right
 
     // This decodes bytes as packed 4-bit values (0-10 -> 0-100%).
     // [6] = Left (high nibble) | Right (low nibble)
@@ -48,7 +49,7 @@ std::optional<BatteryData> Decoder::parse(const std::vector<std::uint8_t> &data)
 
     // Charging logic for legacy: bitmask on the high nibble of byte 7
     // Bit 0 = Right, Bit 1 = Left, Bit 2 = Case
-    out.charging = (raw_chg & 0b0111) != 0;
+    out.charging = (raw_chg & 0b0100) != 0;
 
     if (out.left == -1 && out.right == -1 && out.case_val == -1) {
         // If pairing mode is detected but no valid battery data,
